@@ -2,6 +2,9 @@ const todoForm = document.getElementById("todo-form");
 const todoInput = document.getElementById("todo-input");
 const todoList = document.getElementById("todo-list");
 const themeToggle = document.getElementById("theme-toggle");
+const todoCount = document.getElementById("todo-count");
+const progressBar = document.getElementById("progress-bar");
+const emptyState = document.getElementById("empty-state");
 
 // Restore saved theme preference
 if (localStorage.getItem("theme") === "dark") {
@@ -14,6 +17,20 @@ themeToggle.addEventListener("click", () => {
   themeToggle.textContent = isDark ? "☀️" : "🌙";
   localStorage.setItem("theme", isDark ? "dark" : "light");
 });
+
+function updateStats() {
+  const items = todoList.querySelectorAll(".todo-item");
+  const completed = todoList.querySelectorAll(".todo-item.is-completed");
+  const total = items.length;
+  const done = completed.length;
+
+  todoCount.textContent = `${total} 項`;
+  progressBar.style.width = total > 0 ? `${(done / total) * 100}%` : "0%";
+  emptyState.style.display = total === 0 ? "block" : "none";
+}
+
+// Initialize empty state
+updateStats();
 
 todoForm.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -38,6 +55,7 @@ todoForm.addEventListener("submit", (event) => {
     completeButton.textContent = li.classList.contains("is-completed")
       ? "取消"
       : "完成";
+    updateStats();
   });
 
   const deleteButton = document.createElement("button");
@@ -45,11 +63,17 @@ todoForm.addEventListener("submit", (event) => {
   deleteButton.className = "delete-btn";
   deleteButton.textContent = "刪除";
   deleteButton.addEventListener("click", () => {
-    li.remove();
+    li.classList.add("is-removing");
+    li.addEventListener("animationend", () => {
+      li.remove();
+      updateStats();
+    }, { once: true });
   });
 
   li.append(span, completeButton, deleteButton);
   todoList.appendChild(li);
+
+  updateStats();
 
   todoInput.value = "";
   todoInput.focus();
